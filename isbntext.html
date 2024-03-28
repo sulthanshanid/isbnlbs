@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISBN Lookup</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for loading icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-iJ/2Qc0LIa5c5GN6hvLxeV6LY1M1YHfPb5uSHLZt/jL9wvB/DPWvr2fZTCKXqVjDClPzqPvGtq5rT7tsdZr+Tw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <div class="container">
+        <h2>ISBN Lookup</h2>
+        <div class="mb-3">
+            <input type="text" id="isbn" class="form-control" placeholder="Enter ISBN number" oninput="getBookInfoByISBN()" onchange="getBookInfoByISBN()">
+        </div>
+        <div class="mb-3">
+            <input type="file" id="fileInput" class="form-control" onchange="uploadFile()" disabled> <!-- Disable input by default -->
+            <button id="toggleButton" class="btn btn-secondary" onclick="toggleInput()">Clear Input Automatically</button> <!-- Toggle button -->
+        </div>
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="startScan()">Click here to scan barcode</button> <!-- Renamed Scan button -->
+            <span id="loadingIcon" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Loading...</span> <!-- Loading icon -->
+        </div>
+        <div id="result"></div>
+        <div class="mb-3">
+            <button class="btn btn-success" onclick="addToTable()">Add to Table</button>
+            <button class="btn btn-warning" onclick="saveAsCSV()">Save as CSV</button>
+            <button class="btn btn-danger" onclick="clearTable()">Clear Table</button>
+            <button class="btn btn-secondary" onclick="deleteLastRow()">Delete Last Row</button>
+        </div>
+        <table class="table" id="table">
+            <thead>
+                <tr>
+                    <th scope="col">Author</th>
+                    <th scope="col">ISBN</th>
+                    <th scope="col">Publisher</th>
+                    <th scope="col">Title</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bootstrap JS (Optional, if needed) -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script> -->
+
+    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-javascript-barcode@9.4.0-iv11082320/dist/dbr.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-camera-enhancer@3.3.1/dist/dce.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mozilla/localForage@master/dist/localforage.js"></script>
+
+    <script>
+        let tableData = [];
+        let clearInputOnRequest = false; // Flag to indicate whether to clear input field on request
+
+        function getBookInfoByISBN() {
+            var isbn = document.getElementById('isbn').value;
+            if (isbn.trim() === '') {
+                return;
+            }
+            showLoadingIcon(); // Show loading icon during XML request
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/isbntext');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = function () {
+                hideLoadingIcon(); // Hide loading icon after request completes
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    displayResult(response);
+                    if (clearInputOnRequest) {
+                        clearInputFields(); // Clear input field if the flag is true
+                    }
+                } else {
+                    alert('Error: ' + xhr.statusText);
+                }
+            };
+            xhr.send(JSON.stringify({ isbn: isbn }));
+        }
+
+        // Function to show loading icon
+        function showLoadingIcon() {
+            document.getElementById('loadingIcon').style.display = 'inline';
+        }
+
+        // Function to hide loading icon
+        function hideLoadingIcon() {
+            document.getElementById('loadingIcon').style.display = 'none';
+        }
+
+        function uploadFile() {
+            var fileInput = document.getElementById('fileInput');
+            var file = fileInput.files[0];
+            if (!file) {
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('file', file);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/extract_isbn');
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    displayResult(response);
+                    clearFileInput('fileInput');
+                } else {
+                    alert('Error: ' + xhr.statusText);
+                }
+            };
+            xhr.send(formData);
+        }
+
+        function clearInputFields() {
+            document.getElementById('isbn').value = '';
+        }
+
+        function clearFileInput(id) {
+            var fileInput = document.getElementById(id);
+            fileInput.value = '';
+        }
+
+        function displayResult(data) {
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    var paragraph = document.createElement('p');
+                    paragraph.textContent = key + ': ' + data[key];
+                    resultDiv.appendChild(paragraph);
+                }
+            }
+        }
+
+        function addToTable() {
+            var result = {
+                Author: document.getElementById('result').querySelector("p:nth-child(1)").textContent.split(':')[1].trim(),
+                ISBN: document.getElementById('result').querySelector("p:nth-child(2)").textContent.split(':')[1].trim(),
+                Publisher: document.getElementById('result').querySelector("p:nth-child(3)").textContent.split(':')[1].trim(),
+                Title: document.getElementById('result').querySelector("p:nth-child(4)").textContent.split(':')[1].trim()
+            };
+            tableData.push(result);
+            renderTable();
+        }
+
+        function renderTable() {
+            var tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            tableData.forEach(function (data) {
+                var row = tableBody.insertRow();
+                Object.values(data).forEach(function (value) {
+                    var cell = row.insertCell();
+                    cell.appendChild(document.createTextNode(value));
+                });
+            });
+        }
+
+        function saveAsCSV() {
+            if (tableData.length === 0) {
+                alert('No data to save.');
+                return;
+            }
+
+            var csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += Object.keys(tableData[0]).join(",") + "\r\n";
+            tableData.forEach(function (row) {
+                csvContent += Object.values(row).join(",") + "\r\n";
+            });
+
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "table_data.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+
+        function clearTable() {
+            tableData = [];
+            renderTable();
+        }
+
+        function deleteLastRow() {
+            if (tableData.length === 0) {
+                alert('No rows to delete.');
+                return;
+            }
+            tableData.pop();
+            renderTable();
+        }
+
+        // Toggle input field and set flag
+        function toggleInput() {
+            var inputField = document.getElementById('fileInput');
+            var toggleButton = document.getElementById('toggleButton');
+            inputField.disabled = !inputField.disabled;
+            clearInputOnRequest = !inputField.disabled;
+            if (inputField.disabled) {
+                toggleButton.style.backgroundColor = 'red'; // Change button color to red when disabled
+            } else {
+                toggleButton.style.backgroundColor = 'green'; // Change button color to green when enabled
+            }
+        }
+
+        // Scanning functionality
+        let reader;
+        let enhancer;
+        let interval;
+        let processing = false;
+
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("sw.js").then(function (registration) {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }, function (err) {
+                console.log('ServiceWorker registration failed: ', err);
+            }).catch(function (err) {
+                console.log(err);
+            });
+        }
+
+        window.onload = function() {
+            init();
+        };
+
+        function startScan(){
+            if (!enhancer || !reader) {
+                alert("Please wait for the initialization of Dynamsoft Barcode Reader");
+                return;
+            }
+            enhancer.open(true);
+        }
+
+        function stopScan(){
+            stopProcessingLoop();
+            enhancer.close(true);
+        }
+
+        async function init(){
+            reader = await Dynamsoft.DBR.BarcodeScanner.createInstance();
+            await useEAN13Template();
+            enhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance();
+            enhancer.on("played", (playCallbackInfo) => {
+                startProcessingLoop();
+            });
+            await enhancer.setUIElement(Dynamsoft.DCE.CameraEnhancer.defaultUIElementURL);
+            setScanRegion();
+            let container = document.getElementsByClassName("scanner")[0];
+            container.appendChild(enhancer.getUIElement());
+            document.getElementsByClassName("dce-btn-close")[0].onclick = function () {
+                stopScan();
+            };
+        }
+
+        function startProcessingLoop(isBarcode){
+            stopProcessingLoop();
+            interval = setInterval(captureAndDecode,100); // read barcodes
+        }
+
+        function stopProcessingLoop(){
+            if (interval) {
+                clearInterval(interval);
+                interval = undefined;
+            }
+            processing = false;
+        }
+
+        async function captureAndDecode() {
+            if (!enhancer || !reader) {
+                return
+            }
+            if (enhancer.isOpen() === false) {
+                return;
+            }
+            if (processing == true) {
+                return;
+            }
+            processing = true;
+            let frame = enhancer.getFrame();
+            if (frame) {
+                let results = await reader.decode(frame);
+                if (results.length > 0) {
+                    const result = results[0];
+                    handleScannedText(result.barcodeText);
+                    stopScan();
+                }
+                processing = false;
+            }
+        };
+
+        function setScanRegion(){
+            enhancer.setScanRegion({
+                regionLeft:0,
+                regionTop:25,
+                regionRight:100,
+                regionBottom:55,
+                regionMeasuredByPercentage: 1
+            });
+        }
+
+        async function useEAN13Template() {
+            await reader.initRuntimeSettingsWithString(`
+            {
+                "FormatSpecification": {
+                    "EnableAddOnCode": 1,
+                    "Name": "defaultFormatParameterForAllBarcodeFormat"
+                },
+                "ImageParameter": {
+                    "BarcodeFormatIds": ["BF_EAN_13"],
+                    "BarcodeFormatIds_2": ["BF2_NULL"],
+                    "ExpectedBarcodesCount": 1,
+                    "FormatSpecificationNameArray": [
+                        "defaultFormatParameterForAllBarcodeFormat"
+                    ],
+                    "Name": "default",
+                    "Timeout": 3000
+                },
+                "Version": "3.0"
+            }`);
+        };
+
+        // Function to handle scanned text
+        function handleScannedText(scannedText) {
+            // Assign the scanned text to the ISBN input field
+            document.getElementById('isbn').value = scannedText;
+            // Trigger the ISBN lookup function after setting the scanned text
+            getBookInfoByISBN();
+        }
+    </script>
+</body>
+</html>
