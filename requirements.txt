@@ -1,7 +1,7 @@
-Flask==2.0.2
-requests==2.26.0
-opencv-python==4.5.3.56
-numpy==1.21.2
-pytesseract==0.3.8
-beautifulsoup4==4.10.0
+Flask
+requests
+opencv-python
+numpy
+pytesseract
+beautifulsoup4
 
