@@ -4,4 +4,4 @@ opencv-python
 numpy
 pytesseract
 beautifulsoup4
-
+gunicorn
