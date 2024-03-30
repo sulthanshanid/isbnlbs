@@ -1,9 +1,10 @@
 FROM python:3.9-slim-buster
 
 RUN apt-get update && \
-    apt-get -qq -y install tesseract-ocr && \
-    apt-get -qq -y install libtesseract-dev
-RUN  apt-get install libgl1-mesa-glx
+    apt-get -qq -y install tesseract-ocr \
+                            libtesseract-dev \
+                            libgl1-mesa-glx && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -12,4 +13,4 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-CMD ["gunicorn", "--worker-class=gevent", "--worker-connections=1000" ,"--workers=3" ,"app:app"]
+CMD ["gunicorn", "--worker-class=gevent", "--worker-connections=1000", "--workers=3", "app:app"]
