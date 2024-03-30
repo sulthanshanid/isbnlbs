@@ -257,7 +257,8 @@ def test():
                 if isinstance(authors, list):
                     author = authors[0]  # Select the first author if available
                 else:
-                    author = authors  # Use the author directly if it's not in list format
+                    # Split the string of authors by commas and take the first author
+                    author = authors.split(',')[0].strip()
             else:
                 author = "Unknown"  # Set a default value if no author is provided
             publisher = chat_data.get('publisher')
@@ -266,6 +267,7 @@ def test():
             print("Publisher:", publisher)
         except json.JSONDecodeError as e:
             print("Error decoding JSON:", e)
+
 
     else:
         print("No JSON found in the response string.")
@@ -298,7 +300,7 @@ def test():
         # Print the ISBN if available
         if isbn:
             print("ISBN:", isbn)
-            book=get_book_info(isbn)
+            #book=get_book_info(isbn)
         # Return book information
         return {'ISBN': isbn, 'Title': title, 'Author': author, 'Publisher': publisher}
 
