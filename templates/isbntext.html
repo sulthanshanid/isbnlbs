@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-iJ/2Qc0LIa5c5GN6hvLxeV6LY1M1YHfPb5uSHLZt/jL9wvB/DPWvr2fZTCKXqVjDClPzqPvGtq5rT7tsdZr+Tw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
+
     <div class="container">
         <h2>ISBN Lookup</h2>
         <div class="mb-3">
@@ -100,7 +101,7 @@
             formData.append('file', file);
 
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/extract_isbn');
+            xhr.open('POST', '/manual');
             xhr.onload = function () {
                 if (xhr.status === 200) {
                     var response = JSON.parse(xhr.responseText);
