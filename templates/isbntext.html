@@ -148,6 +148,7 @@ function startVideoStream() {
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(function (stream) {
                     video.srcObject = stream;
+                    videoStream = stream; // Store the MediaStream object
                     video.play();
                 })
                 .catch(function (error) {
@@ -163,9 +164,11 @@ function startVideoStream() {
 
 function stopVideoStream() {
     if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
+        const tracks = videoStream.getTracks();
+        tracks.forEach(track => track.stop());
         const video = document.getElementById('videoElement');
         video.srcObject = null;
+        videoStream = null; // Reset the videoStream variable
     }
 }
 
