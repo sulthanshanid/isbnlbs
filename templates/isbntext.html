@@ -20,6 +20,11 @@
         </div>
         <div class="mb-3">
             <input type="file" id="fileInput" class="form-control" onchange="uploadFile()" disabled> <!-- Disable input by default -->
+            <div class="mb-3">
+    <button class="btn btn-primary" onclick="takePhoto()">Take a Photo</button>
+    <button class="btn btn-primary" onclick="startScan()">Scan Barcode</button>
+    <span id="loadingIcon" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
+</div>
             <button id="toggleButton" class="btn btn-secondary" onclick="toggleInput()">Clear Input Automatically</button>
             <div class="mb-3 form-check">
     <input type="checkbox" class="form-check-input" id="manualModeSwitch" onchange="toggleManualMode()">
@@ -190,6 +195,38 @@
             tableData = [];
             renderTable();
         }
+        // Function to take a photo
+function takePhoto() {
+    if (!enhancer) {
+        alert("Camera not initialized");
+        return;
+    }
+    enhancer.takeSnapshot().then((imageBlob) => {
+        // Upload the captured image
+        uploadImage(imageBlob);
+    }).catch((error) => {
+        console.error('Failed to take a photo:', error);
+    });
+}
+
+// Function to upload the captured image
+function uploadImage(imageBlob) {
+    var formData = new FormData();
+    formData.append('file', imageBlob);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', document.getElementById('manualModeSwitch').checked ? '/manual1' : '/manual');
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            displayResult(response);
+        } else {
+            alert('Error: ' + xhr.statusText);
+        }
+    };
+    xhr.send(formData);
+}
+
 
         function deleteLastRow() {
             if (tableData.length === 0) {
