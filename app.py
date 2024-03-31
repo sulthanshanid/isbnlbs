@@ -124,6 +124,8 @@ def extract_data():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'})
+    if file.filename == 'blob':
+        file.filename="blob.png"
 
     filename = secure_filename(file.filename)  # Extract filename
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))  # Save file
@@ -154,6 +156,8 @@ def test():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'})
+    if file.filename == 'blob':
+        file.filename="blob.png"
 
     filename = secure_filename(file.filename)  # Extract filename
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
