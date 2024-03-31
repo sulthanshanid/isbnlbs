@@ -14,7 +14,7 @@ from pytesseract import Output
 import pytesseract
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'  # Directory to store uploaded files
+app.config['UPLOAD_FOLDER'] = 'uploads'  # DirectoryB to store uploaded files
 
 
 # Image processing functions
