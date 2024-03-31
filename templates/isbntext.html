@@ -19,6 +19,7 @@
     <div class="mb-3">
         <input type="file" id="fileInput" class="form-control" onchange="uploadFile()" disabled> <!-- Disable input by default -->
         <div class="mb-3">
+            <video id="videoElement" autoplay></video>
             <button class="btn btn-primary" onclick="takePhoto()">Take a Photo</button>
             <button class="btn btn-primary" onclick="startScan()">Scan Barcode</button>
             <span id="loadingIcon" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
@@ -65,7 +66,6 @@
 <script>
     let tableData = [];
     let clearInputOnRequest = false; // Flag to indicate whether to clear input field on request
-    let enhancer; // Variable to hold the enhancer object
 
     function getBookInfoByISBN() {
         var isbn = document.getElementById('isbn').value;
@@ -197,15 +197,29 @@
 
     // Function to take a photo
     function takePhoto() {
-        if (!enhancer) {
-            alert("Camera not initialized");
-            return;
-        }
-        enhancer.takeSnapshot().then((imageBlob) => {
+        const video = document.getElementById('videoElement');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(function (err) {
+                console.error('Error accessing the camera: ', err);
+            });
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        document.getElementById('videoElement').addEventListener('click', function () {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageBlob = canvas.toDataURL('image/png');
+
             // Upload the captured image
             uploadImage(imageBlob);
-        }).catch((error) => {
-            console.error('Failed to take a photo:', error);
         });
     }
 
@@ -270,77 +284,36 @@
     };
 
     function startScan() {
-        if (!enhancer || !reader) {
+        if (!reader) {
             alert("Please wait for the initialization of Dynamsoft Barcode Reader");
             return;
         }
-        enhancer.open(true);
+        reader.scan({}, function (results) {
+            if (results && results.length > 0) {
+                handleScannedText(results[0]);
+            } else {
+                alert("No barcode detected.");
+            }
+        }, function (error) {
+            console.error('Barcode scanning error:', error);
+        });
     }
 
     function stopScan() {
-        stopProcessingLoop();
-        enhancer.close(true);
+        if (reader) {
+            reader.stop();
+        }
     }
 
     async function init() {
-        reader = await Dynamsoft.DBR.BarcodeScanner.createInstance();
-        enhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance();
-        enhancer.on("played", (playCallbackInfo) => {
-            startProcessingLoop();
-        });
-        await enhancer.setUIElement(Dynamsoft.DCE.CameraEnhancer.defaultUIElementURL);
-        setScanRegion();
-        let container = document.getElementsByClassName("scanner")[0];
-        container.appendChild(enhancer.getUIElement());
-        document.getElementsByClassName("dce-btn-close")[0].onclick = function () {
-            stopScan();
-        };
-    }
-
-    function startProcessingLoop() {
-        stopProcessingLoop();
-        interval = setInterval(captureAndDecode, 100); // read barcodes
-    }
-
-    function stopProcessingLoop() {
-        if (interval) {
-            clearInterval(interval);
-            interval = undefined;
-        }
-        processing = false;
-    }
-
-    async function captureAndDecode() {
-        if (!enhancer || !reader) {
-            return
-        }
-        if (enhancer.isOpen() === false) {
-            return;
-        }
-        if (processing == true) {
-            return;
-        }
-        processing = true;
-        let frame = enhancer.getFrame();
-        if (frame) {
-            let results = await reader.decode(frame);
-            if (results.length > 0) {
-                const result = results[0];
-                handleScannedText(result.barcodeText);
-                stopScan();
+        reader = await Dynamsoft.BarcodeReader.createInstance();
+        reader.onBarcodeRead = function (results, error) {
+            if (results && results.length > 0) {
+                handleScannedText(results[0]);
+            } else {
+                alert("No barcode detected.");
             }
-            processing = false;
-        }
-    }
-
-    function setScanRegion() {
-        enhancer.setScanRegion({
-            regionLeft: 0,
-            regionTop: 25,
-            regionRight: 100,
-            regionBottom: 55,
-            regionMeasuredByPercentage: 1
-        });
+        };
     }
 
     // Function to handle scanned text
