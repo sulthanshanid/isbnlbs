@@ -129,21 +129,24 @@
     };
     xhr.send(formData);
 }
+let videoStream; // Define a variable to store the MediaStream object
+
 function startVideoStream() {
-        const video = document.getElementById('videoElement');
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function (stream) {
-                    video.srcObject = stream;
-                    video.play();
-                })
-                .catch(function (error) {
-                    console.error('Error accessing the camera: ', error);
-                });
-        } else {
-            console.error('getUserMedia is not supported');
-        }
+    const video = document.getElementById('videoElement');
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                video.srcObject = stream;
+                videoStream = stream; // Store the MediaStream object
+                video.play();
+            })
+            .catch(function (error) {
+                console.error('Error accessing the camera: ', error);
+            });
+    } else {
+        console.error('getUserMedia is not supported');
     }
+}
 function stopVideoStream() {
     if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
@@ -151,6 +154,7 @@ function stopVideoStream() {
         video.srcObject = null;
     }
 }
+
     // Function to take a photo
     // Function to take a photo
 function takePhoto() {
