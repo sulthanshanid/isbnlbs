@@ -24,6 +24,7 @@
 <div class="mb-3">
             <video id="videoElement" autoplay></video>
             <button class="btn btn-primary" onclick="startVideoStream()">Start Video Stream</button>
+            <button class="btn btn-danger" onclick="stopVideoStream()">Stop Video Stream</button>
             <button class="btn btn-primary" onclick="takePhoto()">Capture</button>
             <span id="loadingIcon" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
         </div>
@@ -143,7 +144,13 @@ function startVideoStream() {
             console.error('getUserMedia is not supported');
         }
     }
-
+function stopVideoStream() {
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        const video = document.getElementById('videoElement');
+        video.srcObject = null;
+    }
+}
     // Function to take a photo
     // Function to take a photo
 function takePhoto() {
