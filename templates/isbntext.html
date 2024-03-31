@@ -1,3 +1,4 @@
+User
 
 
 <!DOCTYPE html>
@@ -144,38 +145,53 @@ function startVideoStream() {
     }
 
     // Function to take a photo
-    function takePhoto() {
-        const video = document.getElementById('videoElement');
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
+    // Function to take a photo
+function takePhoto() {
+    const video = document.getElementById('videoElement');
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        const imageBlob = canvas.toDataURL('image/png');
+    // Convert canvas to blob
+    canvas.toBlob(function (blob) {
+        // Check if blob is valid before proceeding
+        if (blob) {
+            // Upload the captured image
+            uploadImage(blob);
+        } else {
+            console.error('Failed to capture image as blob is invalid.');
+        }
+    }, 'image/png');
+}
 
-        // Upload the captured image
-        uploadImage(imageBlob);
-    }
 
     // Function to upload the captured image
     function uploadImage(imageBlob) {
-        var formData = new FormData();
-        formData.append('file', imageBlob);
+    var formData = new FormData();
+    formData.append('file', imageBlob);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', document.getElementById('manualModeSwitch').checked ? '/manual1' : '/manual');
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                var response = JSON.parse(xhr.responseText);
-                displayResult(response);
-            } else {
-                alert('Error: ' + xhr.statusText);
-            }
-        };
-        xhr.send(formData);
-    }
+    // Adding additional data if needed
+    formData.append('additionalField', 'additionalValue');
+
+    var manualModeSwitch = document.getElementById('manualModeSwitch').checked;
+    var url = manualModeSwitch ? '/manual1' : '/manual';
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            displayResult(response);
+        } else {
+            alert('Error: ' + xhr.statusText);
+        }
+    };
+    xhr.send(formData);
+}
+
 
 
         function clearInputFields() {
