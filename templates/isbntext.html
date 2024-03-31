@@ -138,19 +138,29 @@ let videoStream; // Define a variable to store the MediaStream object
 function startVideoStream() {
     const video = document.getElementById('videoElement');
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function (stream) {
-                video.srcObject = stream;
-                videoStream = stream; // Store the MediaStream object
-                video.play();
-            })
-            .catch(function (error) {
-                console.error('Error accessing the camera: ', error);
-            });
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+            const rearCamera = devices.find(device => device.kind === 'videoinput' && device.label.includes('back'));
+            const constraints = {
+                video: {
+                    deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined,
+                }
+            };
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function (stream) {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function (error) {
+                    console.error('Error accessing the camera: ', error);
+                });
+        }).catch(error => {
+            console.error('Error enumerating devices: ', error);
+        });
     } else {
         console.error('getUserMedia is not supported');
     }
 }
+
 function stopVideoStream() {
     if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
