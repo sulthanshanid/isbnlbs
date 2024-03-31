@@ -18,21 +18,25 @@
         <h2>ISBNLBS </h2>
         <div class="mb-3">
             <input type="text" id="isbn" class="form-control" placeholder="Enter ISBN number" oninput="getBookInfoByISBN()" onchange="getBookInfoByISBN()">
+            <button id="toggleButton" class="btn btn-secondary" onclick="toggleInput()">Clear Input Automatically</button>
         </div>
         <div class="mb-3">
-            <input type="file" id="fileInput" class="form-control" onchange="uploadFile()" disabled> <!-- Disable input by default -->
+            <input type="file" id="fileInput" class="form-control" onchange="uploadFile()" disabled>
+            <label class="form-check-label" for="manualModeSwitch">COVER PAGE Mode</label>
+            <input type="checkbox" class="form-check-input" id="manualModeSwitch" onchange="toggleManualMode()"><!-- Disable input by default -->
 <div class="mb-3">
-            <video id="videoElement" autoplay></video>
+
             <button class="btn btn-primary" onclick="startVideoStream()">Start Video Stream</button>
             <button class="btn btn-danger" onclick="stopVideoStream()">Stop Video Stream</button>
             <button class="btn btn-primary" onclick="takePhoto()">Capture</button>
+             <video id="videoElement" autoplay></video>
             <span id="loadingIcon" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
         </div>
 
-            <button id="toggleButton" class="btn btn-secondary" onclick="toggleInput()">Clear Input Automatically</button>
+
             <div class="mb-3 form-check">
-    <input type="checkbox" class="form-check-input" id="manualModeSwitch" onchange="toggleManualMode()">
-    <label class="form-check-label" for="manualModeSwitch">COVER PAGE Mode</label>
+
+
 </div>
 <!-- Toggle button -->
         </div>
