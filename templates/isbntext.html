@@ -287,15 +287,34 @@ function uploadImage(imageBlob) {
         }
 
         function addToTable() {
-            var result = {
-                Author: document.getElementById('result').querySelector("p:nth-child(1)").textContent.split(':')[1].trim(),
-                ISBN: document.getElementById('result').querySelector("p:nth-child(2)").textContent.split(':')[1].trim(),
-                Publisher: document.getElementById('result').querySelector("p:nth-child(3)").textContent.split(':')[1].trim(),
-                Title: document.getElementById('result').querySelector("p:nth-child(4)").textContent.split(':')[1].trim()
-            };
-            tableData.push(result);
-            renderTable();
-        }
+    var authors = document.getElementById('result').querySelector("p:nth-child(1)").textContent.split(':')[1].trim();
+    var isbn = document.getElementById('result').querySelector("p:nth-child(2)").textContent.split(':')[1].trim();
+    var publisher = document.getElementById('result').querySelector("p:nth-child(3)").textContent.split(':')[1].trim();
+    var title = document.getElementById('result').querySelector("p:nth-child(4)").textContent.split(':')[1].trim();
+
+    // Splitting authors by comma if there are multiple authors
+    var authorList = authors.split(',');
+    authorList.forEach(function (author) {
+        var result = {
+            Author: author.trim(),
+            ISBN: isbn,
+            Publisher: publisher,
+            Title: title
+        };
+        tableData.push(result);
+    });
+
+    renderTable();
+
+    // Clear retrieved data from the result div
+    clearRetrievedData();
+}
+
+function clearRetrievedData() {
+    var resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = '';
+}
+
 
         function renderTable() {
             var tableBody = document.getElementById('tableBody');
