@@ -292,23 +292,24 @@ function uploadImage(imageBlob) {
     var publisher = document.getElementById('result').querySelector("p:nth-child(3)").textContent.split(':')[1].trim();
     var title = document.getElementById('result').querySelector("p:nth-child(4)").textContent.split(':')[1].trim();
 
-    // Splitting authors by comma if there are multiple authors
+    // Concatenate multiple authors into one string
     var authorList = authors.split(',');
-    authorList.forEach(function (author) {
-        var result = {
-            Author: author.trim(),
-            ISBN: isbn,
-            Publisher: publisher,
-            Title: title
-        };
-        tableData.push(result);
-    });
+    var combinedAuthors = authorList.map(author => author.trim()).join(', ');
 
+    var result = {
+        Author: combinedAuthors,
+        ISBN: isbn,
+        Publisher: publisher,
+        Title: title
+    };
+
+    tableData.push(result);
     renderTable();
 
     // Clear retrieved data from the result div
     clearRetrievedData();
 }
+
 
 function clearRetrievedData() {
     var resultDiv = document.getElementById('result');
