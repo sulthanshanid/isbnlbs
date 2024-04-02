@@ -50,7 +50,7 @@ def ensure_cupboards_and_rows_exist():
 ensure_cupboards_and_rows_exist()
 
 # Function to read data from Excel and insert into the database
-def insert_data(cupboard_number, excel_filename, excel_e_filename):
+def insert_data(cupboard_number, excel_filename, manual_added):
     def insert_books(ws, cupboard_number, error_log):
         column_names = next(
             ws.iter_rows(min_row=1, max_row=1, values_only=True))  # Extract column names from the first row
@@ -71,17 +71,26 @@ def insert_data(cupboard_number, excel_filename, excel_e_filename):
             sys.exit(1)
 
         for row_number, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=1):
+
             try:
                 isbn, title, author, publisher, rowno = row[isbn_index], row[title_index], row[
                     author_index], row[publisher_index], row[rowno_index]
-                if isbn is not None and isinstance(isbn, str) and isbn.strip():  # Check if ISBN is not null or empty
-                    cursor.execute("SELECT id FROM Cupboard WHERE cupboard_number = ?", (cupboard_number,))
-                    cupboard_row = cursor.fetchone()
-                    if cupboard_row:
-                        cupboard_id = cupboard_row[0]
-                        cursor.execute("INSERT INTO Book (isbn, title, author, publisher, row_id, cupboard_id) VALUES (?, ?, ?, ?, ?, ?)",
-                                       (isbn, title, author, publisher, rowno, cupboard_id))
-                        print(f"  Inserted row {row_number}: ISBN={isbn}, Title={title}, Author={author}, Publisher={publisher}, ROWNO={rowno}")
+
+                # Check if ISBN is not null or empty
+                cursor.execute("SELECT id FROM Cupboard WHERE cupboard_number = ?", (cupboard_number,))
+                cupboard_row = cursor.fetchone()
+
+                if cupboard_row:
+                    cupboard_id = cupboard_row[0]
+                    cursor.execute("SELECT id FROM Row WHERE cupboard_id = ? ",
+                                   (cupboard_id,))
+                    row_row = cursor.fetchone()
+
+                    if row_row:
+                        row_id = row_row[0]
+                        cursor.execute("INSERT INTO Book (isbn, title, author, publisher, row_id, cupboard_id, manual_added) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                       (isbn, title, author, publisher, row[rowno_index], cupboard_id, manual_added))
+                        print(f"  Inserted row {row_number}: ISBN={isbn}, Title={title}, Author={author}, Publisher={publisher}, ROWNO={row[rowno_index]}")
             except ValueError as e:
                 print(f"Error: {e}")
                 error_log.append((cupboard_number, row_number, str(e)))
@@ -93,24 +102,18 @@ def insert_data(cupboard_number, excel_filename, excel_e_filename):
 
     error_log = []
 
-    # Load workbook for cupboard.xlsx
+    # Load workbook
     wb = load_workbook(excel_filename)
     ws = wb.active
     insert_books(ws, cupboard_number, error_log)
 
-    # Load workbook for cupboardno_e.xlsx
-    wb_e = load_workbook(excel_e_filename)
-    ws_e = wb_e.active
-    insert_books(ws_e, cupboard_number, error_log)
-
-    if error_log:
-        print(f"Errors encountered while processing {excel_filename}:")
-        for error in error_log:
-            print(f"  Error in row {error[1]}: {error[2]}")
-
-# Insert data for each cupboard
+# Insert data for each cupboard from regular files
 for cupboard_number in range(1, 10):
-    insert_data(cupboard_number, f'{cupboard_number}.xlsx', f'{cupboard_number}_e.xlsx')
+    insert_data(cupboard_number, f'{cupboard_number}.xlsx', manual_added=0)
+
+# Insert data for each cupboard from 'cupboard_e.xlsx' file with manual_added set to 1
+for cupboard_number in range(1, 10):
+    insert_data(cupboard_number, f'{cupboard_number}_e.xlsx', manual_added=1)
 
 # Commit changes and close connection
 conn.commit()
