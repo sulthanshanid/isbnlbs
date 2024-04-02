@@ -34,7 +34,7 @@ def get_book_info(isbn, filename):
 
 # Read ISBNs from multiple files and count duplicates
 cupboard=input("enter cupboard no")
-file_pattern = "cup7/isbn.txt"  # Modify this pattern according to your file naming convention
+file_pattern = "row1.txt"  # Modify this pattern according to your file naming convention
 isbn_counts = {}
 
 for filename in os.listdir('.'):
@@ -65,7 +65,7 @@ for isbn, filenames in isbn_counts.items():
                 print(f"Details retrieved for ISBN {isbn} from {filename}")
         except Exception as e:
                 # Code to handle the exception
-                with open("cup7/failed.txt", "a") as file:
+                with open("failed.txt", "a") as file:
                     file.write(f"{isbn}\n")
                     continue
 
