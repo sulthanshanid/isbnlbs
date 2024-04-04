@@ -12,8 +12,7 @@ os.environ['HTTP_PROXY'] = proxy
 os.environ['https_proxy'] = proxy
 os.environ['HTTPS_PROXY'] = proxy
 os.environ['REQUESTS_CA_BUNDLE'] = "C:\\Users\\User\\Desktop\\cacert.pem"
-sqlite_connection = sqlite3.connect('books.db')
-sqlite_cursor = sqlite_connection.cursor()
+
 
 # Connect to MySQL database
 mysql_connection = mysql.connector.connect(
@@ -25,15 +24,15 @@ mysql_connection = mysql.connector.connect(
 mysql_cursor = mysql_connection.cursor()
 
 # Fetch titles of books where cupboard_id=1 from SQLite database
-sqlite_cursor.execute("SELECT id ,isbn, title, author, publisher,cupboard_id, manual_added FROM book WHERE cupboard_id=1")
-books_data = sqlite_cursor.fetchall()
+mysql_cursor.execute("SELECT id ,isbn, title, author, publisher,cupboard_id, manual_added,row_id,no_of_copies FROM books1 where  destination_row_id is Null and cupboard_id not in (8,9)")
+books_data = mysql_cursor.fetchall()
 
 # Function to determine category
 def determine_category(title):
 
 
   # Execute the query
-  mysql_cursor.execute("SELECT category FROM Row where cupboard_id=1")
+  mysql_cursor.execute("SELECT category FROM Row where cupboard_id not in (8,9)")
 
   # Fetch the result into a list of tuples
   categories = mysql_cursor.fetchall()
@@ -46,7 +45,7 @@ def determine_category(title):
     "messages": [
       {
         "id": "6ZUkhHE",
-        "content": title + " beongs which categoriy [" + str(categories) + "] reply only category name in json format like {\"category\":vaule}",
+        "content": title[:20] + " beongs which categoriy choose one  from following categories [" + str(categories) + "]  reply answer in json format like {\"category\":vaule}",
         # Assuming response is JSON, adjust accordingly
         "role": "user"
       }
@@ -133,20 +132,29 @@ def determine_category(title):
 
 # Insert data into MySQL database
 for book in books_data:
-    id,isbn, title, author, publisher, cupboard_id,manual_added = book
-    if id in [811]:
-        print(title)
-        category = determine_category(title)
-        if category:
-            # Insert data into MySQL books table
-            mysql_cursor.execute("INSERT INTO books (isbn, title, author, publisher, manual_added, category,cupboard_id) VALUES (%s, %s, %s, %s, %s, %s,%s)",
-                                 (isbn, title, author, publisher, manual_added, category,cupboard_id))
-            mysql_connection.commit()
-        else:
-          print("error ",id)
-          with open("failed.txt", "a") as file:
-            file.write(f"{id ,isbn}\n")
+
+    id, isbn, title, author, publisher, cupboard_id, manual_added, row_id, no_of_copies = book
+    if 1:
+      print(title)
+      category = determine_category(title)
+      if category:
+
+          # Insert data into MySQL books table
+          sql_query = "UPDATE books1 SET category = %s WHERE id = %s"
+
+          # Specify the values to be substituted into the query
+          values = (category, id)
+
+          # Execute the SQL query with placeholders
+          mysql_cursor.execute(sql_query, values)
+
+          # Commit the transaction
+          mysql_connection.commit()
+      else:
+            print("error ",id)
+            with open("failed.txt", "a") as file:
+              file.write(f"{id ,isbn}\n")
 
 # Close connections
-sqlite_connection.close()
+
 mysql_connection.close()
